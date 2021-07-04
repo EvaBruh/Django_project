@@ -41,11 +41,11 @@ def about(request):
 
 
 def addpage(request):
-    return HttpResponse('Добавить статью')
+    return render(request, 'info/add_page.html', {'title': 'Добавить статью'})
 
 
 def contact(request):
-    return HttpResponse('Связь')
+    return render(request, 'info/contact.html', {'title': 'Контакты'})
 
 
 def login(request):
