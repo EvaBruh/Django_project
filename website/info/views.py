@@ -1,5 +1,7 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+
+from .forms import *
 from .models import *
 
 
@@ -21,19 +23,31 @@ def index(request):
     return render(request, 'info/index.html', context=context)
 
 
-def show_category(request, cat_id):
-    posts = Post.objects.filter(cat_id=cat_id)
+def show_category(request, cat_slug):
+    posts = Post.objects.filter(cat__slug=cat_slug)
 
-    if len(posts) == 0:
-        raise Http404()
+    # if len(posts) == 0:
+    #     raise Http404()
 
     context = {
         'posts': posts,
         'title': 'Отображение по рубрикам',
-        'cat_selected': cat_id,
+        'cat_selected': cat_slug,
     }
 
     return render(request, 'info/index.html', context=context)
+
+
+def show_post(request, post_slug):
+    post = get_object_or_404(Post, slug=post_slug)
+
+    context = {
+        'post': post,
+        'title': post.title,
+        'cat_selected': post.cat_id,
+    }
+
+    return render(request, 'info/post.html', context=context)
 
 
 def about(request):
@@ -41,7 +55,15 @@ def about(request):
 
 
 def addpage(request):
-    return render(request, 'info/add_page.html', {'title': 'Добавить статью'})
+    if request.method == 'POST':
+        form = AddPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = AddPostForm()
+
+    return render(request, 'info/add_page.html', {'form': form, 'title': 'Добавить статью'})
 
 
 def contact(request):
@@ -50,10 +72,6 @@ def contact(request):
 
 def login(request):
     return HttpResponse('Логин')
-
-
-def show_post(request, post_id):
-    return HttpResponse(f'Post with post id = {post_id}')
 
 
 def PageNotFound(request, exception):
