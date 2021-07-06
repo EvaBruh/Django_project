@@ -17,7 +17,7 @@ class AddPostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'cols': 60, 'rows': 10}),
         }
 
-    # пользовательский валидатор для заголовка clean_
+    # пользовательский валидатор для заголовка - clean_...
     def clean_title(self):
         title = self.cleaned_data['title']
         if len(title) > 200:

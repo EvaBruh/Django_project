@@ -1,5 +1,6 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import *
 from .models import *
@@ -11,59 +12,75 @@ menu = [{'title': 'О сайте', 'url_name': 'about'},
         {'title': 'Войти', 'url_name': 'login'}]
 
 
-def index(request):
-    posts = Post.objects.all()
+# Домашняя страница
+class PostHome(ListView):
+    model = Post
+    template_name = 'info/index.html'
+    context_object_name = 'posts'                   # Указывает имя для переменной в index.html
 
-    context = {
-        'posts': posts,
-        'title': 'Главная',
-        'cat_selected': 0,
-    }
+    # Отображение "внутренностей", меню
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Главная страница'
+        context['cat_selected'] = 0                 # Показывает, что "Все категории" в режиме - выбрано
+        return context
 
-    return render(request, 'info/index.html', context=context)
-
-
-def show_category(request, cat_slug):
-    posts = Post.objects.filter(cat__slug=cat_slug)
-
-    # if len(posts) == 0:
-    #     raise Http404()
-
-    context = {
-        'posts': posts,
-        'title': 'Отображение по рубрикам',
-        'cat_selected': cat_slug,
-    }
-
-    return render(request, 'info/index.html', context=context)
+    # Выбрать что именно отображать, тут случай с чекером published
+    def get_queryset(self):
+        return Post.objects.filter(is_published=True)
 
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Post, slug=post_slug)
+# Категории
+class PostCategory(ListView):
+    model = Post
+    template_name = 'info/index.html'
+    context_object_name = 'posts'                   # Указывает имя для переменной в index.html
+    allow_empty = False                             # Для вызова 404 при несуществующем URL-slug
 
-    context = {
-        'post': post,
-        'title': post.title,
-        'cat_selected': post.cat_id,
-    }
+    # Отображение "внутренностей", меню
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Категория - ' + str(context['posts'][0].cat)    # В названии после "-" выбранная категория
+        context['cat_selected'] = context['posts'][0].cat_id                # берём ID выбранной рубрики
+        return context
 
-    return render(request, 'info/post.html', context=context)
+    # Обращаемся к параметру slug из таблицы cat
+    def get_queryset(self):
+        return Post.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
+
+
+# Отображение поста(Читать пост)
+class ShowPost(DetailView):
+    model = Post
+    template_name = 'info/post.html'
+    slug_url_kwarg = 'post_slug'                # для id, pk_url_slug
+    context_object_name = 'post'                # отображаем пост(в переменную post в post.html)
+
+    # Функция отображения "внутренностей", меню
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = context['post']
+        return context
 
 
 def about(request):
     return render(request, 'info/about.html', {'title': 'О сайте'})
 
 
-def addpage(request):
-    if request.method == 'POST':
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    else:
-        form = AddPostForm()
+# "Добавить статью", отображение страницы и связь с формой
+class AddPage(CreateView):
+    form_class = AddPostForm
+    template_name = 'info/add_page.html'
 
-    return render(request, 'info/add_page.html', {'form': form, 'title': 'Добавить статью'})
+    # Функция отображения "внутренностей", меню
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Добавление статьи'
+        return context
 
 
 def contact(request):
