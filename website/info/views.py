@@ -1,19 +1,16 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import *
 from .models import *
-
-
-menu = [{'title': 'О сайте', 'url_name': 'about'},
-        {'title': 'Добавить статью', 'url_name': 'add_page'},
-        {'title': 'Обратная связь', 'url_name': 'contact'},
-        {'title': 'Войти', 'url_name': 'login'}]
+from .utils import *
 
 
 # Домашняя страница
-class PostHome(ListView):
+class PostHome(DataMixin, ListView):
     model = Post
     template_name = 'info/index.html'
     context_object_name = 'posts'                   # Указывает имя для переменной в index.html
@@ -21,10 +18,8 @@ class PostHome(ListView):
     # Отображение "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Главная страница'
-        context['cat_selected'] = 0                 # Показывает, что "Все категории" в режиме - выбрано
-        return context
+        c_def = self.get_user_context(title='Главная страница')
+        return context | c_def                      # dict(list(context.items()) + list(c_def.items()))
 
     # Выбрать что именно отображать, тут случай с чекером published
     def get_queryset(self):
@@ -32,7 +27,7 @@ class PostHome(ListView):
 
 
 # Категории
-class PostCategory(ListView):
+class PostCategory(DataMixin, ListView):
     model = Post
     template_name = 'info/index.html'
     context_object_name = 'posts'                   # Указывает имя для переменной в index.html
@@ -41,10 +36,9 @@ class PostCategory(ListView):
     # Отображение "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Категория - ' + str(context['posts'][0].cat)    # В названии после "-" выбранная категория
-        context['cat_selected'] = context['posts'][0].cat_id                # берём ID выбранной рубрики
-        return context
+        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].cat),
+                                      cat_selected=context['posts'][0].cat_id)
+        return context | c_def
 
     # Обращаемся к параметру slug из таблицы cat
     def get_queryset(self):
@@ -52,7 +46,7 @@ class PostCategory(ListView):
 
 
 # Отображение поста(Читать пост)
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     model = Post
     template_name = 'info/post.html'
     slug_url_kwarg = 'post_slug'                # для id, pk_url_slug
@@ -61,8 +55,8 @@ class ShowPost(DetailView):
     # Функция отображения "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = context['post']
+        c_def = self.get_user_context(title=context['post'])
+        return context | c_def
         return context
 
 
@@ -71,16 +65,17 @@ def about(request):
 
 
 # "Добавить статью", отображение страницы и связь с формой
-class AddPage(CreateView):
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'info/add_page.html'
+    success_url = reverse_lazy('home')
+    login_url = reverse_lazy('home')
 
     # Функция отображения "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Добавление статьи'
-        return context
+        c_def = self.get_user_context(title='Добавление статьи')
+        return context | c_def
 
 
 def contact(request):
