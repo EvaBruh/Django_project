@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import *
-from .models import *
+from info.models import *
 from .utils import *
 
 
@@ -13,13 +13,13 @@ from .utils import *
 class PostHome(DataMixin, ListView):
     model = Post
     template_name = 'info/index.html'
-    context_object_name = 'posts'                   # Указывает имя для переменной в index.html
+    context_object_name = 'posts'  # Указывает имя для переменной в index.html
 
     # Отображение "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Главная страница')
-        return context | c_def                      # dict(list(context.items()) + list(c_def.items()))
+        return context | c_def  # dict(list(context.items()) + list(c_def.items()))
 
     # Выбрать что именно отображать, тут случай с чекером published
     def get_queryset(self):
@@ -30,8 +30,8 @@ class PostHome(DataMixin, ListView):
 class PostCategory(DataMixin, ListView):
     model = Post
     template_name = 'info/index.html'
-    context_object_name = 'posts'                   # Указывает имя для переменной в index.html
-    allow_empty = False                             # Для вызова 404 при несуществующем URL-slug
+    context_object_name = 'posts'  # Указывает имя для переменной в index.html
+    allow_empty = False  # Для вызова 404 при несуществующем URL-slug
 
     # Отображение "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
@@ -49,8 +49,8 @@ class PostCategory(DataMixin, ListView):
 class ShowPost(DataMixin, DetailView):
     model = Post
     template_name = 'info/post.html'
-    slug_url_kwarg = 'post_slug'                # для id, pk_url_slug
-    context_object_name = 'post'                # отображаем пост(в переменную post в post.html)
+    slug_url_kwarg = 'post_slug'  # для id, pk_url_slug
+    context_object_name = 'post'  # отображаем пост(в переменную post в post.html)
 
     # Функция отображения "внутренностей", меню
     def get_context_data(self, *, object_list=None, **kwargs):
@@ -88,3 +88,13 @@ def login(request):
 def PageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Страница не найдена.</h1>')
 
+
+class RegisterUser(DataMixin, CreateView):
+    form_class = RegisterUserForm
+    template_name = 'info/register.html'
+    success_url = reverse_lazy('login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Регистрация')
+        return context | c_def
