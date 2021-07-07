@@ -57,7 +57,6 @@ class ShowPost(DataMixin, DetailView):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title=context['post'])
         return context | c_def
-        return context
 
 
 def about(request):
