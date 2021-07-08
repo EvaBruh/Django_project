@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'captcha',
     'debug_toolbar',
     'info.apps.InfoConfig',
     'django.contrib.admin',
@@ -139,3 +140,10 @@ MEDIA_URL = '/media/'
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'website_cache'),
+    }
+}
